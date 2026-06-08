@@ -12,7 +12,7 @@ import (
 	"sort"
 	"text/tabwriter"
 
-	"github.com/usbarmory/go-boot/uefi"
+	"github.com/walterchris/go-boot/uefi"
 )
 
 // CmdFn represents a command handler.

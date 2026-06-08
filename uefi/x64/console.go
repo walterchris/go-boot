@@ -6,7 +6,7 @@
 package x64
 
 import (
-	"github.com/usbarmory/go-boot/uefi"
+	"github.com/walterchris/go-boot/uefi"
 	_ "unsafe"
 )
 

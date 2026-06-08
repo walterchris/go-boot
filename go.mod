@@ -1,4 +1,4 @@
-module github.com/usbarmory/go-boot
+module github.com/walterchris/go-boot
 
 go 1.26.2
 

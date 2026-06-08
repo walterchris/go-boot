@@ -21,7 +21,7 @@ import (
 	"github.com/usbarmory/tamago/soc/intel/rtc"
 	"github.com/usbarmory/tamago/soc/intel/uart"
 
-	"github.com/usbarmory/go-boot/uefi"
+	"github.com/walterchris/go-boot/uefi"
 )
 
 // Peripheral registers

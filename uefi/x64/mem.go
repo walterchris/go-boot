@@ -12,7 +12,7 @@ import (
 
 	"github.com/usbarmory/tamago/dma"
 
-	"github.com/usbarmory/go-boot/uefi"
+	"github.com/walterchris/go-boot/uefi"
 )
 
 //go:linkname _unused runtime/goos.RamStart

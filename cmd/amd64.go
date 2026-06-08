@@ -16,8 +16,8 @@ import (
 	"github.com/usbarmory/tamago/dma"
 	"github.com/usbarmory/tamago/soc/intel/pci"
 
-	"github.com/usbarmory/go-boot/shell"
-	"github.com/usbarmory/go-boot/uefi/x64"
+	"github.com/walterchris/go-boot/shell"
+	"github.com/walterchris/go-boot/uefi/x64"
 )
 
 func init() {

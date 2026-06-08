@@ -21,9 +21,9 @@ import (
 	"github.com/gliderlabs/ssh"
 	"github.com/usbarmory/go-net"
 
-	"github.com/usbarmory/go-boot/shell"
-	"github.com/usbarmory/go-boot/uefi"
-	"github.com/usbarmory/go-boot/uefi/x64"
+	"github.com/walterchris/go-boot/shell"
+	"github.com/walterchris/go-boot/uefi"
+	"github.com/walterchris/go-boot/uefi/x64"
 
 	// maintained set of TLS roots for any potential TLS client requests
 	_ "golang.org/x/crypto/x509roots/fallback"

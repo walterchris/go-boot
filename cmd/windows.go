@@ -8,7 +8,7 @@ package cmd
 import (
 	"regexp"
 
-	"github.com/usbarmory/go-boot/shell"
+	"github.com/walterchris/go-boot/shell"
 )
 
 const WindowsBootManager = `\EFI\Microsoft\Boot\bootmgfw.efi`

@@ -13,10 +13,10 @@ import (
 	"log"
 	"os"
 
-	"github.com/usbarmory/go-boot/cmd"
-	"github.com/usbarmory/go-boot/shell"
-	"github.com/usbarmory/go-boot/uefi"
-	"github.com/usbarmory/go-boot/uefi/x64"
+	"github.com/walterchris/go-boot/cmd"
+	"github.com/walterchris/go-boot/shell"
+	"github.com/walterchris/go-boot/uefi"
+	"github.com/walterchris/go-boot/uefi/x64"
 )
 
 // Build time variable

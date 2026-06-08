@@ -12,7 +12,7 @@ import (
 	"regexp"
 	"strconv"
 
-	"github.com/usbarmory/go-boot/shell"
+	"github.com/walterchris/go-boot/shell"
 	"github.com/usbarmory/tamago/dma"
 )
 

@@ -17,7 +17,7 @@ import (
 
 	"golang.org/x/term"
 
-	"github.com/usbarmory/go-boot/uefi"
+	"github.com/walterchris/go-boot/uefi"
 )
 
 // DefaultPrompt represents the command prompt when none is set for the
