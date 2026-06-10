@@ -61,10 +61,14 @@ TEXT ·callFn(SB),NOSPLIT,$0-48
 	IMULQ	$8, R15
 	ADDQ	R15, R12
 
+	// An odd number of pushed (stack) arguments would leave SP 8-byte
+	// misaligned at CALL: pad with one slot whenever the count is odd, so
+	// the callee entry follows the x86_64 ABI (callees may use aligned SSE
+	// accesses on their frame).
 	MOVQ	R13, R14
 	ANDQ	$1, R14
-	CMPQ	R13, R14
-	JNE	aligned
+	CMPQ	R14, $0
+	JE	aligned
 	PUSHQ	$0		// ensure 16-byte alignment
 aligned:
 	MOVQ	R13, R14
