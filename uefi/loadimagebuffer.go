@@ -7,6 +7,7 @@ package uefi
 
 import (
 	"errors"
+	"runtime"
 )
 
 // LoadImageBuffer calls EFI_BOOT_SERVICES.LoadImage() with a caller-supplied
@@ -43,6 +44,11 @@ func (s *BootServices) LoadImageBuffer(root *FS, name string, buf []byte) (image
 			ptrval(&imageHandle),
 		},
 	)
+
+	// ptrval launders the slice pointers to uint64 before the firmware
+	// call; keep the backing arrays live until it returns.
+	runtime.KeepAlive(buf)
+	runtime.KeepAlive(devicePath)
 
 	return imageHandle, parseStatus(status)
 }
