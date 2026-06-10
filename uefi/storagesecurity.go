@@ -16,15 +16,26 @@ var ErrTruncated = errors.New("storage security: transfer size exceeds buffer")
 // the carrier for TCG Opal IF-RECV/IF-SEND.
 var EFI_STORAGE_SECURITY_COMMAND_PROTOCOL_GUID = MustParseGUID("c88b0b6d-0dfc-49a7-9cb4-49074b4c3a78")
 
+// EFI_STORAGE_SECURITY_COMMAND_PROTOCOL member offsets
+const (
+	receiveData = 0x00
+	sendData    = 0x08
+)
+
 // StorageSecurity is a located EFI_STORAGE_SECURITY_COMMAND_PROTOCOL instance.
 type StorageSecurity struct {
 	base uint64 // protocol structure address (the This pointer)
-	recv uint64 // ReceiveData function pointer
-	send uint64 // SendData function pointer
+	recv uint64 // address of the ReceiveData member slot
+	send uint64 // address of the SendData member slot
 }
 
 // GetStorageSecurity locates the first EFI_STORAGE_SECURITY_COMMAND_PROTOCOL
 // instance and resolves its ReceiveData/SendData entry points.
+//
+// Like every service dispatch, recv/send hold the address of the member slot —
+// not the function pointer stored in it — because callFn performs the
+// dereference (memory-indirect CALL). The decode below only validates that the
+// slots hold non-NULL pointers, failing closed on a corrupt protocol instance.
 func (s *BootServices) GetStorageSecurity() (ssc *StorageSecurity, err error) {
 	base, err := s.LocateProtocol(EFI_STORAGE_SECURITY_COMMAND_PROTOCOL_GUID)
 	if err != nil {
@@ -38,8 +49,11 @@ func (s *BootServices) GetStorageSecurity() (ssc *StorageSecurity, err error) {
 	if err = decode(&fn, base); err != nil {
 		return nil, err
 	}
+	if fn.ReceiveData == 0 || fn.SendData == 0 {
+		return nil, errors.New("storage security: NULL ReceiveData/SendData pointer")
+	}
 
-	return &StorageSecurity{base: base, recv: fn.ReceiveData, send: fn.SendData}, nil
+	return &StorageSecurity{base: base, recv: base + receiveData, send: base + sendData}, nil
 }
 
 // SendData calls EFI_STORAGE_SECURITY_COMMAND_PROTOCOL.SendData() (SECURITY
