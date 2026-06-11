@@ -60,9 +60,9 @@ func (s *BootServices) GetStorageSecurity() (ssc *StorageSecurity, err error) {
 // PROTOCOL OUT) with the given security protocol ID and SP-specific value (the TCG
 // ComID for Opal). timeout is in 100 ns units (0 = no timeout).
 func (p *StorageSecurity) SendData(mediaID uint32, timeout uint64, securityProtocol uint8, spSpecific uint16, payload []byte) error {
-	var buf uint64
+	var ptr uint64
 	if len(payload) > 0 {
-		buf = ptrval(&payload[0])
+		ptr = ptrval(&payload[0])
 	}
 	status := callService(p.send, []uint64{
 		p.base,
@@ -71,7 +71,7 @@ func (p *StorageSecurity) SendData(mediaID uint32, timeout uint64, securityProto
 		uint64(securityProtocol),
 		uint64(spSpecific),
 		uint64(len(payload)),
-		buf,
+		ptr,
 	})
 	return parseStatus(status)
 }

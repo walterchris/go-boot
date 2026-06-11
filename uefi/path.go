@@ -76,7 +76,10 @@ func (root *FS) devicePath() (devicePath []*DevicePath, desc []byte, err error) 
 			break
 		}
 
-		if node.Length == 0 || node.Length > 0xff {
+		// A device-path node is at least its 4-byte generic header (Type, SubType,
+		// Length). Reject Length < 4: dataSize = Length-4 underflows uint16 for
+		// Length 1..3 and the copy below would slice far past buf and panic.
+		if node.Length < 4 || node.Length > 0xff {
 			return nil, nil, errors.New("invalid length")
 		}
 

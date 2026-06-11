@@ -81,7 +81,11 @@ push:
 	JMP	call
 
 dummy:
-	// balance PUSHQ to avoid compiler error
+	// Unreachable at run time (jumped over by JMP call above), but NOT dead code:
+	// the Go assembler statically checks PUSH/POP balance per function, and the
+	// variable-count PUSHQ in the push loop has no matching POPQ on the live path
+	// (the stack is abandoned wholesale after the call). These two POPQ satisfy
+	// that check; removing them fails assembly with "unbalanced PUSH/POP".
 	POPQ	CX
 	POPQ	CX
 
