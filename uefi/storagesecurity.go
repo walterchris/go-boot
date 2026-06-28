@@ -30,23 +30,48 @@ type StorageSecurity struct {
 }
 
 // GetStorageSecurity locates the first EFI_STORAGE_SECURITY_COMMAND_PROTOCOL
-// instance and resolves its ReceiveData/SendData entry points.
-//
-// Like every service dispatch, recv/send hold the address of the member slot —
-// not the function pointer stored in it — because callFn performs the
-// dereference (memory-indirect CALL). The decode below only validates that the
-// slots hold non-NULL pointers, failing closed on a corrupt protocol instance.
+// instance and resolves its ReceiveData/SendData entry points. It uses
+// LocateProtocol, so it yields no handle; use LocateStorageSecurityHandles +
+// GetStorageSecurityByHandle when the device's MediaId (Block I/O) is also needed.
 func (s *BootServices) GetStorageSecurity() (ssc *StorageSecurity, err error) {
 	base, err := s.LocateProtocol(EFI_STORAGE_SECURITY_COMMAND_PROTOCOL_GUID)
 	if err != nil {
 		return nil, err
 	}
+	return newStorageSecurity(base)
+}
 
+// LocateStorageSecurityHandles returns the handles exposing
+// EFI_STORAGE_SECURITY_COMMAND_PROTOCOL (the storage devices that carry Opal
+// IF-SEND/IF-RECV). Each such device handle also exposes Block I/O, so the caller
+// can pair the security protocol with the matching MediaId (GetBlockIOMedia).
+func (s *BootServices) LocateStorageSecurityHandles() ([]uint64, error) {
+	return s.LocateHandleBuffer(ByProtocol, EFI_STORAGE_SECURITY_COMMAND_PROTOCOL_GUID)
+}
+
+// GetStorageSecurityByHandle resolves EFI_STORAGE_SECURITY_COMMAND_PROTOCOL on a
+// specific handle. Unlike GetStorageSecurity it preserves the handle association,
+// so the caller can read the same handle's Block I/O MediaId.
+func (s *BootServices) GetStorageSecurityByHandle(handle uint64) (*StorageSecurity, error) {
+	base, err := s.HandleProtocol(handle, EFI_STORAGE_SECURITY_COMMAND_PROTOCOL_GUID)
+	if err != nil {
+		return nil, err
+	}
+	return newStorageSecurity(base)
+}
+
+// newStorageSecurity decodes the ReceiveData/SendData member slots from a located
+// protocol interface address, failing closed on a corrupt (NULL-pointer) instance.
+//
+// Like every service dispatch, recv/send hold the address of the member slot —
+// not the function pointer stored in it — because callFn performs the dereference
+// (memory-indirect CALL).
+func newStorageSecurity(base uint64) (*StorageSecurity, error) {
 	var fn struct {
 		ReceiveData uint64
 		SendData    uint64
 	}
-	if err = decode(&fn, base); err != nil {
+	if err := decode(&fn, base); err != nil {
 		return nil, err
 	}
 	if fn.ReceiveData == 0 || fn.SendData == 0 {

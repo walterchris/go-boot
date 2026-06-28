@@ -14,8 +14,17 @@ import (
 const (
 	// EFI Boot Services offset for GetMemoryMap
 	getMemoryMap = 0x38
-	maxEntries   = 1000
+	// EFI Boot Services offset for FreePool
+	freePool   = 0x48
+	maxEntries = 1000
 )
+
+// FreePool calls EFI_BOOT_SERVICES.FreePool(), releasing a buffer the firmware
+// pool-allocated (e.g. the handle array returned by LocateHandleBuffer).
+func (s *BootServices) FreePool(buffer uint64) error {
+	status := callService(s.base+freePool, []uint64{buffer})
+	return parseStatus(status)
+}
 
 // Advanced Configuration and Power Interface Specification (ACPI)
 // Version 6.0 - Table 15-312 Address Range Types12
