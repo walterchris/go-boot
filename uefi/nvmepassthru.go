@@ -89,7 +89,7 @@ func newNVMePassThru(base uint64) (*NVMePassThru, error) {
 func nvmeCommand(opcode uint8, securityProtocol uint8, spSpecific uint16, length uint32) []byte {
 	cmd := make([]byte, 44)
 	binary.LittleEndian.PutUint32(cmd[0:], uint32(opcode)) // Cdw0
-	cmd[4] = cdwFlagsCdw10Cdw11                             // Flags
+	cmd[4] = cdwFlagsCdw10Cdw11                            // Flags
 	// cmd[8:12] Nsid = 0 (admin / controller)
 	binary.LittleEndian.PutUint32(cmd[20:], uint32(securityProtocol)<<24|uint32(spSpecific)<<8) // Cdw10
 	binary.LittleEndian.PutUint32(cmd[24:], length)                                             // Cdw11
@@ -107,8 +107,8 @@ func (p *NVMePassThru) submit(cmd, data, completion []byte) error {
 		binary.LittleEndian.PutUint32(packet[16:], uint32(len(data)))
 	}
 	// MetadataBuffer (0) at [24:32], MetadataLength (0) at [32:36].
-	packet[36] = nvmeAdminQueue                                  // QueueType
-	binary.LittleEndian.PutUint64(packet[40:], ptrval(&cmd[0]))  // NvmeCmd
+	packet[36] = nvmeAdminQueue                                 // QueueType
+	binary.LittleEndian.PutUint64(packet[40:], ptrval(&cmd[0])) // NvmeCmd
 	binary.LittleEndian.PutUint64(packet[48:], ptrval(&completion[0]))
 
 	status := callService(p.passThru, []uint64{
@@ -143,4 +143,46 @@ func (p *NVMePassThru) SecurityReceive(securityProtocol uint8, comID uint16, siz
 		return nil, err
 	}
 	return buf, nil
+}
+
+// NVMe Identify admin command (opcode 0x06); Cdw10 CNS=0x01 selects Identify
+// Controller. The controller returns a 4096-byte data structure whose Serial
+// Number (SN) is 20 ASCII bytes at offset 4 (NVMe Base spec, Identify Controller).
+const (
+	nvmeIdentify    = 0x06
+	cnsIdentifyCtrl = 0x01
+	cdwFlagsCdw10   = 0x04 // CDW10_VALID (Identify sets only Cdw10)
+	nvmeIdentifyLen = 4096
+	nvmeSerialOff   = 4
+	nvmeSerialLen   = 20
+)
+
+// IdentifyController issues NVMe Identify Controller (CNS=1) and returns the raw
+// 4096-byte identify data.
+func (p *NVMePassThru) IdentifyController() ([]byte, error) {
+	cmd := make([]byte, 44)
+	binary.LittleEndian.PutUint32(cmd[0:], nvmeIdentify)     // Cdw0: opcode
+	cmd[4] = cdwFlagsCdw10                                   // Flags: CDW10 valid
+	binary.LittleEndian.PutUint32(cmd[20:], cnsIdentifyCtrl) // Cdw10: CNS
+	data := make([]byte, nvmeIdentifyLen)
+	completion := make([]byte, 16)
+	if err := p.submit(cmd, data, completion); err != nil {
+		return nil, err
+	}
+	return data, nil
+}
+
+// SerialNumber returns the controller's 20-byte Serial Number (Identify Controller
+// bytes 4..23), space-padded ASCII as reported by the drive. It is returned
+// exactly as-is (no trimming): callers that use it as a salt — e.g. the sedutil
+// PBKDF2 credential derivation, whose salt is these raw 20 bytes — must match the
+// drive's own encoding.
+func (p *NVMePassThru) SerialNumber() ([]byte, error) {
+	id, err := p.IdentifyController()
+	if err != nil {
+		return nil, err
+	}
+	sn := make([]byte, nvmeSerialLen)
+	copy(sn, id[nvmeSerialOff:nvmeSerialOff+nvmeSerialLen])
+	return sn, nil
 }
