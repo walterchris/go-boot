@@ -9,6 +9,7 @@ import (
 	"bytes"
 	"encoding/binary"
 	"errors"
+	"strings"
 
 	"github.com/usbarmory/tamago/dma"
 )
@@ -118,6 +119,15 @@ func (d *FilePath) Bytes() []byte {
 
 // FilePath returns the full EFI Device Path associated with the named file.
 func (root *FS) FilePath(name string) (devicePath []*DevicePath, filePath *FilePath, desc []byte, err error) {
+	// A UEFI FILEPATH_DEVICE_PATH node must carry an absolute, backslash-separated
+	// path. Loaders that re-open themselves via LoadedImage->FilePath (e.g. the
+	// Windows Boot Manager self-measuring bootmgfw.efi) fail if this node is
+	// relative or slash-separated, so normalize before encoding.
+	name = strings.ReplaceAll(name, "/", "\\")
+	if !strings.HasPrefix(name, "\\") {
+		name = "\\" + name
+	}
+
 	pathName := toUTF16(name)
 
 	filePath = &FilePath{
